@@ -16,6 +16,10 @@ from ptp_global import tokenizer, device, MAX_NUM_WORDS, LOW_RESOURCE
 #  help us track the exact attention layer and timestamp during the diffusion iference.
 
 
+# https://github.com/google/prompt-to-prompt
+# https://prompt-to-prompt.github.io/
+# https://prompt-to-prompt.github.io/ptp_files/Prompt-to-Prompt_preprint.pdf
+
 class LocalBlend:
 
     def __call__(self, x_t, attention_store):
