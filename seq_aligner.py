@@ -29,19 +29,18 @@ class ScoreParams:
             return self.match
         
     
-def get_matrix(size_x, size_y, gap):
-    matrix = []
-    for i in range(len(size_x) + 1):
-        sub_matrix = []
-        for j in range(len(size_y) + 1):
-            sub_matrix.append(0)
-        matrix.append(sub_matrix)
-    for j in range(1, len(size_y) + 1):
-        matrix[0][j] = j*gap
-    for i in range(1, len(size_x) + 1):
-        matrix[i][0] = i*gap
-    return matrix
-
+# def get_matrix(size_x, size_y, gap):
+#     matrix = []
+#     for i in range(len(size_x) + 1):
+#         sub_matrix = []
+#         for j in range(len(size_y) + 1):
+#             sub_matrix.append(0)
+#         matrix.append(sub_matrix)
+#     for j in range(1, len(size_y) + 1):
+#         matrix[0][j] = j*gap
+#     for i in range(1, len(size_x) + 1):
+#         matrix[i][0] = i*gap
+#     return matrix
 
 def get_matrix(size_x, size_y, gap):
     matrix = np.zeros((size_x + 1, size_y + 1), dtype=np.int32)
@@ -183,7 +182,6 @@ def get_replacement_mapper_(x: str, y: str, tokenizer, max_len=77):
             j += 1
 
     return torch.from_numpy(mapper).float()
-
 
 
 def get_replacement_mapper(prompts, tokenizer, max_len=77):
