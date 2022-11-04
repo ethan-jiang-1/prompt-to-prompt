@@ -19,6 +19,7 @@ import torch
 from typing import Optional, Union, Tuple, List, Dict # , Callable, Dict
 #from IPython.display import display
 from tqdm.notebook import tqdm
+from ptp_global import MAX_NUM_WORDS, LOW_RESOURCE
 
 
 # def text_under_image(image: np.ndarray, text: str, text_color: Tuple[int, int, int] = (0, 0, 0)):
@@ -61,7 +62,7 @@ from tqdm.notebook import tqdm
 #     display(pil_img)
 
     
-def diffusion_step(model, controller, latents, context, t, guidance_scale, low_resource=False):
+def diffusion_step(model, controller, latents, context, t, guidance_scale, low_resource=LOW_RESOURCE):
     if low_resource:
         noise_pred_uncond = model.unet(latents, t, encoder_hidden_states=context[0])["sample"]
         noise_prediction_text = model.unet(latents, t, encoder_hidden_states=context[1])["sample"]
@@ -108,10 +109,10 @@ def text2image_ldm(
     height = width = 256
     batch_size = len(prompt)
     
-    uncond_input = model.tokenizer([""] * batch_size, padding="max_length", max_length=77, return_tensors="pt")
+    uncond_input = model.tokenizer([""] * batch_size, padding="max_length", max_length=MAX_NUM_WORDS, return_tensors="pt")
     uncond_embeddings = model.bert(uncond_input.input_ids.to(model.device))[0]
     
-    text_input = model.tokenizer(prompt, padding="max_length", max_length=77, return_tensors="pt")
+    text_input = model.tokenizer(prompt, padding="max_length", max_length=MAX_NUM_WORDS, return_tensors="pt")
     text_embeddings = model.bert(text_input.input_ids.to(model.device))[0]
     latent, latents = init_latent(latent, model, height, width, generator, batch_size)
     context = torch.cat([uncond_embeddings, text_embeddings])
@@ -257,7 +258,7 @@ def update_alpha_time_word(alpha, bounds: Union[float, Tuple[float, float]], pro
 
 
 def get_time_words_attention_alpha(prompts, num_steps, cross_replace_steps: Union[float, Tuple[float, float], Dict[str, Tuple[float, float]]],
-                                   tokenizer, max_num_words=77):
+                                   tokenizer, max_num_words=MAX_NUM_WORDS):
     if type(cross_replace_steps) is not dict:
         cross_replace_steps = {"default_": cross_replace_steps}
     if "default_" not in cross_replace_steps:

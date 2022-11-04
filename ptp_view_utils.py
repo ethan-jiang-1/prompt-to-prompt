@@ -21,7 +21,7 @@ import torch
 from IPython.display import display
 
 from ptp_global import tokenizer
-from ptp_core import AttentionStore
+from ptp_attention import AttentionStore
 
 
 def text_under_image(image: np.ndarray, text: str, text_color: Tuple[int, int, int] = (0, 0, 0)):

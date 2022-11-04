@@ -4,10 +4,17 @@ import torch.nn.functional as nnf
 import abc
 import ptp_utils
 import ptp_seq_aligner
-from ptp_global import tokenizer, device 
+from ptp_global import tokenizer, device, MAX_NUM_WORDS, LOW_RESOURCE 
 
-MAX_NUM_WORDS = 77
-LOW_RESOURCE = False 
+
+# Prompt-to-Prompt Attnetion Controllers
+# Our main logic is implemented in the `forward` call in an `AttentionControl` object.
+# The forward is called in each attention layer of the diffusion model 
+# and it can modify the input attnetion weights `attn`.
+#
+# `is_cross`, `place_in_unet in ("down", "mid", "up")`, `AttentionControl.cur_step` 
+#  help us track the exact attention layer and timestamp during the diffusion iference.
+
 
 class LocalBlend:
 
@@ -209,7 +216,7 @@ def get_equalizer(text: str, word_select: Union[int, Tuple[int, ...]], values: U
                   Tuple[float, ...]]):
     if type(word_select) is int or type(word_select) is str:
         word_select = (word_select,)
-    equalizer = torch.ones(len(values), 77)
+    equalizer = torch.ones(len(values), MAX_NUM_WORDS)
     values = torch.tensor(values, dtype=torch.float32)
     for word in word_select:
         inds = ptp_utils.get_word_inds(text, word, tokenizer)
