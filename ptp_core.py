@@ -3,7 +3,7 @@ import torch
 import torch.nn.functional as nnf
 import abc
 import ptp_utils
-import seq_aligner
+import ptp_seq_aligner
 from ptp_global import tokenizer, device 
 
 MAX_NUM_WORDS = 77
@@ -172,7 +172,7 @@ class AttentionReplace(AttentionControlEdit):
     def __init__(self, prompts, num_steps: int, cross_replace_steps: float, self_replace_steps: float,
                  local_blend: Optional[LocalBlend] = None):
         super(AttentionReplace, self).__init__(prompts, num_steps, cross_replace_steps, self_replace_steps, local_blend)
-        self.mapper = seq_aligner.get_replacement_mapper(prompts, tokenizer).to(device)
+        self.mapper = ptp_seq_aligner.get_replacement_mapper(prompts, tokenizer).to(device)
         
 
 class AttentionRefine(AttentionControlEdit):
@@ -185,7 +185,7 @@ class AttentionRefine(AttentionControlEdit):
     def __init__(self, prompts, num_steps: int, cross_replace_steps: float, self_replace_steps: float,
                  local_blend: Optional[LocalBlend] = None):
         super(AttentionRefine, self).__init__(prompts, num_steps, cross_replace_steps, self_replace_steps, local_blend)
-        self.mapper, alphas = seq_aligner.get_refinement_mapper(prompts, tokenizer)
+        self.mapper, alphas = ptp_seq_aligner.get_refinement_mapper(prompts, tokenizer)
         self.mapper, alphas = self.mapper.to(device), alphas.to(device)
         self.alphas = alphas.reshape(alphas.shape[0], 1, 1, alphas.shape[1])
 
