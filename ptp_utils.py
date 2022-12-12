@@ -58,8 +58,8 @@ from ptp_global import MAX_NUM_WORDS, LOW_RESOURCE
 #             image_[i * (h + offset): i * (h + offset) + h:, j * (w + offset): j * (w + offset) + w] = images[
 #                 i * num_cols + j]
 
-#     pil_img = Image.fromarray(image_)
-#     display(pil_img)
+#   pil_img = Image.fromarray(image_)
+#   display(pil_img)
 
     
 def diffusion_step(model, controller, latents, context, t, guidance_scale, low_resource=LOW_RESOURCE):
@@ -128,6 +128,7 @@ def text2image_ldm(
     return image, latent
 
 
+
 @torch.no_grad()
 def text2image_ldm_stable(
     model,
@@ -175,6 +176,11 @@ def text2image_ldm_stable(
 
 def register_attention_control(model, controller):
     def ca_forward(self, place_in_unet):
+        to_out = self.to_out
+        if type(to_out) is torch.nn.modules.container.ModuleList:
+            to_out = self.to_out[0]
+        else:
+            to_out = self.to_out
 
         def forward(x, context=None, mask=None):
             batch_size, sequence_length, dim = x.shape
@@ -201,9 +207,20 @@ def register_attention_control(model, controller):
             attn = controller(attn, is_cross, place_in_unet)
             out = torch.einsum("b i j, b j d -> b i d", attn, v)
             out = self.reshape_batch_dim_to_heads(out)
-            return self.to_out(out)
+            return to_out(out)
 
         return forward
+
+    class DummyController:
+
+        def __call__(self, *args):
+            return args[0]
+
+        def __init__(self):
+            self.num_att_layers = 0
+
+    if controller is None:
+        controller = DummyController()
 
     def register_recr(net_, count, place_in_unet):
         if net_.__class__.__name__ == 'CrossAttention':
@@ -223,6 +240,7 @@ def register_attention_control(model, controller):
             cross_att_count += register_recr(net[1], 0, "up")
         elif "mid" in net[0]:
             cross_att_count += register_recr(net[1], 0, "mid")
+
     controller.num_att_layers = cross_att_count
 
     
@@ -247,7 +265,7 @@ def get_word_inds(text: str, word_place: int, tokenizer):
     return np.array(out)
 
 
-def update_alpha_time_word(alpha, bounds: Union[float, Tuple[float, float]], prompt_ind: int, word_inds: Optional[torch.Tensor] = None):
+def update_alpha_time_word(alpha, bounds: Union[float, Tuple[float, float]], prompt_ind: int, word_inds: Optional[torch.Tensor]=None):
     if type(bounds) is float:
         bounds = 0, bounds
     start, end = int(bounds[0] * alpha.shape[0]), int(bounds[1] * alpha.shape[0])
@@ -259,8 +277,9 @@ def update_alpha_time_word(alpha, bounds: Union[float, Tuple[float, float]], pro
     return alpha
 
 
-def get_time_words_attention_alpha(prompts, num_steps, cross_replace_steps: Union[float, Tuple[float, float], Dict[str, Tuple[float, float]]],
-                                   tokenizer, max_num_words=MAX_NUM_WORDS):
+def get_time_words_attention_alpha(prompts, num_steps,
+                                   cross_replace_steps: Union[float, Dict[str, Tuple[float, float]]],
+                                   tokenizer, max_num_words=77):
     if type(cross_replace_steps) is not dict:
         cross_replace_steps = {"default_": cross_replace_steps}
     if "default_" not in cross_replace_steps:
@@ -275,5 +294,5 @@ def get_time_words_attention_alpha(prompts, num_steps, cross_replace_steps: Unio
             for i, ind in enumerate(inds):
                 if len(ind) > 0:
                     alpha_time_words = update_alpha_time_word(alpha_time_words, item, i, ind)
-    alpha_time_words = alpha_time_words.reshape(num_steps + 1, len(prompts) - 1, 1, 1, max_num_words) # time, batch, heads, pixels, words
+    alpha_time_words = alpha_time_words.reshape(num_steps + 1, len(prompts) - 1, 1, 1, max_num_words)
     return alpha_time_words
