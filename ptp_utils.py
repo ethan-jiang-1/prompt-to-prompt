@@ -86,6 +86,8 @@ def latent2image(vae, latents):
 
 
 def init_latent(latent, model, height, width, generator, batch_size):
+    if generator is None:
+        generator = torch.manual_seed(8888)
     if latent is None:
         latent = torch.randn(
             (1, model.unet.in_channels, height // 8, width // 8),
